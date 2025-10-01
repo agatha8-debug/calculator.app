@@ -1,0 +1,474 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Calculator, TrendingUp, History, Settings, X, Maximize2 } from 'lucide-react';
+
+export default function AdvancedCalculator() {
+  const [display, setDisplay] = useState('0');
+  const [equation, setEquation] = useState('');
+  const [history, setHistory] = useState([]);
+  const [mode, setMode] = useState('deg');
+  const [memory, setMemory] = useState(0);
+  const [activeTab, setActiveTab] = useState('calc');
+  const [graphFunction, setGraphFunction] = useState('sin(x)');
+  const [xMin, setXMin] = useState(-10);
+  const [xMax, setXMax] = useState(10);
+  const [yMin, setYMin] = useState(-10);
+  const [yMax, setYMax] = useState(10);
+  const canvasRef = useRef(null);
+
+  const buttons = [
+    ['sin', 'cos', 'tan', 'ln', '7', '8', '9', '÷'],
+    ['asin', 'acos', 'atan', 'log', '4', '5', '6', '×'],
+    ['√', 'x²', 'xʸ', 'eˣ', '1', '2', '3', '−'],
+    ['π', 'e', '(', ')', '0', '.', '=', '+'],
+    ['C', '⌫', 'deg', 'n!', 'MC', 'MR', 'M+', 'M-']
+  ];
+
+  const evaluateExpression = (expr, x = null) => {
+    try {
+      let processed = expr
+        .replace(/\^/g, '**')
+        .replace(/×/g, '*')
+        .replace(/÷/g, '/')
+        .replace(/−/g, '-')
+        .replace(/π/g, Math.PI.toString())
+        .replace(/e(?![x])/g, Math.E.toString());
+
+      if (x !== null) {
+        processed = processed.replace(/x/g, `(${x})`);
+      }
+
+      // Scientific functions
+      processed = processed.replace(/sin\(([^)]+)\)/g, (_, arg) => {
+        const val = evaluateExpression(arg, x);
+        return mode === 'deg' ? Math.sin(val * Math.PI / 180) : Math.sin(val);
+      });
+      processed = processed.replace(/cos\(([^)]+)\)/g, (_, arg) => {
+        const val = evaluateExpression(arg, x);
+        return mode === 'deg' ? Math.cos(val * Math.PI / 180) : Math.cos(val);
+      });
+      processed = processed.replace(/tan\(([^)]+)\)/g, (_, arg) => {
+        const val = evaluateExpression(arg, x);
+        return mode === 'deg' ? Math.tan(val * Math.PI / 180) : Math.tan(val);
+      });
+      processed = processed.replace(/asin\(([^)]+)\)/g, (_, arg) => {
+        const val = evaluateExpression(arg, x);
+        const result = Math.asin(val);
+        return mode === 'deg' ? result * 180 / Math.PI : result;
+      });
+      processed = processed.replace(/acos\(([^)]+)\)/g, (_, arg) => {
+        const val = evaluateExpression(arg, x);
+        const result = Math.acos(val);
+        return mode === 'deg' ? result * 180 / Math.PI : result;
+      });
+      processed = processed.replace(/atan\(([^)]+)\)/g, (_, arg) => {
+        const val = evaluateExpression(arg, x);
+        const result = Math.atan(val);
+        return mode === 'deg' ? result * 180 / Math.PI : result;
+      });
+      processed = processed.replace(/ln\(([^)]+)\)/g, (_, arg) => Math.log(evaluateExpression(arg, x)));
+      processed = processed.replace(/log\(([^)]+)\)/g, (_, arg) => Math.log10(evaluateExpression(arg, x)));
+      processed = processed.replace(/√\(([^)]+)\)/g, (_, arg) => Math.sqrt(evaluateExpression(arg, x)));
+      processed = processed.replace(/abs\(([^)]+)\)/g, (_, arg) => Math.abs(evaluateExpression(arg, x)));
+
+      const result = eval(processed);
+      return isFinite(result) ? result : NaN;
+    } catch {
+      return NaN;
+    }
+  };
+
+  const factorial = (n) => {
+    if (n < 0 || !Number.isInteger(n)) return NaN;
+    if (n === 0 || n === 1) return 1;
+    let result = 1;
+    for (let i = 2; i <= n; i++) result *= i;
+    return result;
+  };
+
+  const derivative = (func, x, h = 0.0001) => {
+    return (evaluateExpression(func, x + h) - evaluateExpression(func, x - h)) / (2 * h);
+  };
+
+  const integral = (func, a, b, n = 1000) => {
+    const h = (b - a) / n;
+    let sum = 0;
+    for (let i = 0; i < n; i++) {
+      const x = a + i * h + h / 2;
+      sum += evaluateExpression(func, x);
+    }
+    return sum * h;
+  };
+
+  const handleButton = (btn) => {
+    if (btn === 'C') {
+      setDisplay('0');
+      setEquation('');
+    } else if (btn === '⌫') {
+      setDisplay(display.length > 1 ? display.slice(0, -1) : '0');
+    } else if (btn === '=') {
+      const result = evaluateExpression(display);
+      if (!isNaN(result)) {
+        setHistory([...history, { eq: display, result }]);
+        setEquation(display + ' =');
+        setDisplay(result.toString());
+      } else {
+        setDisplay('Error');
+      }
+    } else if (btn === 'deg') {
+      setMode(mode === 'deg' ? 'rad' : 'deg');
+    } else if (btn === 'π') {
+      setDisplay(display === '0' ? 'π' : display + 'π');
+    } else if (btn === 'e') {
+      setDisplay(display === '0' ? 'e' : display + 'e');
+    } else if (btn === 'x²') {
+      const val = parseFloat(display);
+      if (!isNaN(val)) setDisplay((val ** 2).toString());
+    } else if (btn === '√') {
+      setDisplay(display === '0' ? '√(' : display + '√(');
+    } else if (btn === 'n!') {
+      const val = parseInt(display);
+      if (!isNaN(val)) setDisplay(factorial(val).toString());
+    } else if (['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'ln', 'log'].includes(btn)) {
+      setDisplay(display === '0' ? btn + '(' : display + btn + '(');
+    } else if (btn === 'eˣ') {
+      const val = parseFloat(display);
+      if (!isNaN(val)) setDisplay(Math.exp(val).toString());
+    } else if (btn === 'xʸ') {
+      setDisplay(display + '^');
+    } else if (btn === 'MC') {
+      setMemory(0);
+    } else if (btn === 'MR') {
+      setDisplay(memory.toString());
+    } else if (btn === 'M+') {
+      const val = parseFloat(display);
+      if (!isNaN(val)) setMemory(memory + val);
+    } else if (btn === 'M-') {
+      const val = parseFloat(display);
+      if (!isNaN(val)) setMemory(memory - val);
+    } else if (['+', '−', '×', '÷'].includes(btn)) {
+      setDisplay(display + btn);
+    } else if (btn === '(' || btn === ')') {
+      setDisplay(display === '0' ? btn : display + btn);
+    } else {
+      setDisplay(display === '0' ? btn : display + btn);
+    }
+  };
+
+  const drawGraph = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const width = canvas.width;
+    const height = canvas.height;
+
+    ctx.clearRect(0, 0, width, height);
+
+    // Draw grid
+    ctx.strokeStyle = '#334155';
+    ctx.lineWidth = 1;
+
+    const xStep = (xMax - xMin) / 10;
+    const yStep = (yMax - yMin) / 10;
+
+    for (let i = 0; i <= 10; i++) {
+      const x = (i / 10) * width;
+      const y = (i / 10) * height;
+      
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(width, y);
+      ctx.stroke();
+    }
+
+    // Draw axes
+    const xAxisY = height * (yMax / (yMax - yMin));
+    const yAxisX = width * (-xMin / (xMax - xMin));
+
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 2;
+
+    if (xAxisY >= 0 && xAxisY <= height) {
+      ctx.beginPath();
+      ctx.moveTo(0, xAxisY);
+      ctx.lineTo(width, xAxisY);
+      ctx.stroke();
+    }
+
+    if (yAxisX >= 0 && yAxisX <= width) {
+      ctx.beginPath();
+      ctx.moveTo(yAxisX, 0);
+      ctx.lineTo(yAxisX, height);
+      ctx.stroke();
+    }
+
+    // Draw function
+    ctx.strokeStyle = '#a855f7';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+
+    let started = false;
+    const points = 500;
+
+    for (let i = 0; i <= points; i++) {
+      const x = xMin + (xMax - xMin) * (i / points);
+      const y = evaluateExpression(graphFunction, x);
+
+      if (!isNaN(y) && isFinite(y)) {
+        const canvasX = ((x - xMin) / (xMax - xMin)) * width;
+        const canvasY = height - ((y - yMin) / (yMax - yMin)) * height;
+
+        if (canvasY >= 0 && canvasY <= height) {
+          if (!started) {
+            ctx.moveTo(canvasX, canvasY);
+            started = true;
+          } else {
+            ctx.lineTo(canvasX, canvasY);
+          }
+        } else {
+          started = false;
+        }
+      } else {
+        started = false;
+      }
+    }
+
+    ctx.stroke();
+
+    // Draw labels
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '12px monospace';
+    ctx.fillText(`x: [${xMin}, ${xMax}]`, 10, height - 10);
+    ctx.fillText(`y: [${yMin}, ${yMax}]`, 10, 20);
+  };
+
+  useEffect(() => {
+    if (activeTab === 'graph') {
+      drawGraph();
+    }
+  }, [activeTab, graphFunction, xMin, xMax, yMin, yMax, mode]);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-2 sm:p-4">
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-black/40 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/10 overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Calculator className="w-6 h-6 text-white" />
+                <h1 className="text-white font-bold text-xl">Advanced Calc Pro</h1>
+              </div>
+              <span className="text-white/80 text-xs uppercase font-semibold">{mode}</span>
+            </div>
+            
+            {/* Tabs */}
+            <div className="flex gap-2">
+              {['calc', 'graph', 'history'].map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold transition ${
+                    activeTab === tab 
+                      ? 'bg-white text-purple-600' 
+                      : 'bg-white/20 text-white hover:bg-white/30'
+                  }`}
+                >
+                  {tab === 'calc' && <Calculator className="w-4 h-4 inline mr-1" />}
+                  {tab === 'graph' && <TrendingUp className="w-4 h-4 inline mr-1" />}
+                  {tab === 'history' && <History className="w-4 h-4 inline mr-1" />}
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Calculator Tab */}
+          {activeTab === 'calc' && (
+            <>
+              <div className="bg-slate-950/50 p-6 border-b border-white/5">
+                <div className="text-right mb-2">
+                  <div className="text-purple-400/60 text-sm h-6">{equation}</div>
+                  <div className="text-white text-3xl sm:text-4xl font-light break-all">{display}</div>
+                </div>
+                {memory !== 0 && (
+                  <div className="text-right text-pink-400/80 text-xs mt-2">Memory: {memory}</div>
+                )}
+              </div>
+
+              <div className="p-4">
+                {buttons.map((row, i) => (
+                  <div key={i} className="grid grid-cols-8 gap-1.5 mb-1.5">
+                    {row.map((btn, j) => (
+                      <button
+                        key={j}
+                        onClick={() => handleButton(btn)}
+                        className={`
+                          h-12 sm:h-14 rounded-lg font-semibold text-xs sm:text-sm transition-all active:scale-95
+                          ${btn === '=' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' :
+                            ['C', '⌫'].includes(btn) ? 'bg-red-500/20 text-red-300 hover:bg-red-500/30' :
+                            ['÷', '×', '−', '+'].includes(btn) ? 'bg-purple-500/20 text-purple-300 hover:bg-purple-500/30' :
+                            ['MC', 'MR', 'M+', 'M-'].includes(btn) ? 'bg-blue-500/20 text-blue-300 hover:bg-blue-500/30' :
+                            btn === 'deg' ? 'bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30' :
+                            '0123456789.'.includes(btn) ? 'bg-white/10 text-white hover:bg-white/20' :
+                            'bg-slate-700/30 text-slate-300 hover:bg-slate-700/50'}
+                        `}
+                      >
+                        {btn}
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Graph Tab */}
+          {activeTab === 'graph' && (
+            <div className="p-4">
+              <div className="mb-4">
+                <label className="text-white/80 text-sm font-semibold mb-2 block">Function: f(x) =</label>
+                <input
+                  type="text"
+                  value={graphFunction}
+                  onChange={(e) => setGraphFunction(e.target.value)}
+                  className="w-full bg-slate-800/50 text-white px-4 py-3 rounded-lg border border-white/10 focus:border-purple-500 focus:outline-none"
+                  placeholder="e.g., sin(x), x^2, ln(x)"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div>
+                  <label className="text-white/60 text-xs mb-1 block">X Min</label>
+                  <input
+                    type="number"
+                    value={xMin}
+                    onChange={(e) => setXMin(parseFloat(e.target.value))}
+                    className="w-full bg-slate-800/50 text-white px-3 py-2 rounded text-sm border border-white/10"
+                  />
+                </div>
+                <div>
+                  <label className="text-white/60 text-xs mb-1 block">X Max</label>
+                  <input
+                    type="number"
+                    value={xMax}
+                    onChange={(e) => setXMax(parseFloat(e.target.value))}
+                    className="w-full bg-slate-800/50 text-white px-3 py-2 rounded text-sm border border-white/10"
+                  />
+                </div>
+                <div>
+                  <label className="text-white/60 text-xs mb-1 block">Y Min</label>
+                  <input
+                    type="number"
+                    value={yMin}
+                    onChange={(e) => setYMin(parseFloat(e.target.value))}
+                    className="w-full bg-slate-800/50 text-white px-3 py-2 rounded text-sm border border-white/10"
+                  />
+                </div>
+                <div>
+                  <label className="text-white/60 text-xs mb-1 block">Y Max</label>
+                  <input
+                    type="number"
+                    value={yMax}
+                    onChange={(e) => setYMax(parseFloat(e.target.value))}
+                    className="w-full bg-slate-800/50 text-white px-3 py-2 rounded text-sm border border-white/10"
+                  />
+                </div>
+              </div>
+
+              <canvas
+                ref={canvasRef}
+                width={600}
+                height={400}
+                className="w-full bg-slate-900/50 rounded-lg border border-white/10"
+              />
+
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                <button
+                  onClick={() => { setXMin(-10); setXMax(10); setYMin(-10); setYMax(10); }}
+                  className="bg-purple-500/20 text-purple-300 py-2 rounded-lg text-sm hover:bg-purple-500/30 transition"
+                >
+                  Reset View
+                </button>
+                <button
+                  onClick={() => { setXMin(xMin * 2); setXMax(xMax * 2); setYMin(yMin * 2); setYMax(yMax * 2); }}
+                  className="bg-blue-500/20 text-blue-300 py-2 rounded-lg text-sm hover:bg-blue-500/30 transition"
+                >
+                  Zoom Out
+                </button>
+                <button
+                  onClick={() => { setXMin(xMin / 2); setXMax(xMax / 2); setYMin(yMin / 2); setYMax(yMax / 2); }}
+                  className="bg-green-500/20 text-green-300 py-2 rounded-lg text-sm hover:bg-green-500/30 transition"
+                >
+                  Zoom In
+                </button>
+              </div>
+
+              <div className="mt-4 p-3 bg-slate-800/30 rounded-lg">
+                <p className="text-white/60 text-xs mb-2">Quick Examples:</p>
+                <div className="flex flex-wrap gap-2">
+                  {['sin(x)', 'cos(x)', 'x^2', 'x^3', 'ln(x)', '1/x', 'sqrt(x)', 'abs(x)'].map(fn => (
+                    <button
+                      key={fn}
+                      onClick={() => setGraphFunction(fn)}
+                      className="bg-white/10 text-white/80 px-2 py-1 rounded text-xs hover:bg-white/20 transition"
+                    >
+                      {fn}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* History Tab */}
+          {activeTab === 'history' && (
+            <div className="p-4">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-white font-semibold">Calculation History</h3>
+                <button
+                  onClick={() => setHistory([])}
+                  className="text-red-400/80 hover:text-red-400 text-sm"
+                >
+                  Clear All
+                </button>
+              </div>
+              {history.length === 0 ? (
+                <div className="text-center py-12">
+                  <History className="w-12 h-12 text-white/20 mx-auto mb-3" />
+                  <p className="text-white/40">No calculations yet</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {history.slice().reverse().map((item, i) => (
+                    <div
+                      key={i}
+                      className="bg-slate-800/30 p-3 rounded-lg cursor-pointer hover:bg-slate-800/50 transition"
+                      onClick={() => {
+                        setDisplay(item.result.toString());
+                        setActiveTab('calc');
+                      }}
+                    >
+                      <div className="text-white/60 text-sm">{item.eq}</div>
+                      <div className="text-white font-semibold text-lg">= {item.result}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-4 text-center text-white/40 text-xs">
+          <p>Scientific • Graphing • History • Memory</p>
+          <p className="mt-1">Try graphing: sin(x), x^2, ln(x), 1/x</p>
+        </div>
+      </div>
+    </div>
+  );
+}
