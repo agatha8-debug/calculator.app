@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Calculator Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #581c87 50%, #1e293b 100%);
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .calculator {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%);
+            padding: 1.5rem;
+            color: white;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .title {
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+        
+        .mode {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            opacity: 0.9;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .tab.active {
+            background: white;
+            color: #9333ea;
+        }
+        
+        .tab:not(.active) {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        .tab:not(.active):hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .display {
+            background: rgba(2, 6, 23, 0.5);
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .equation {
+            color: rgba(192, 132, 252, 0.6);
+            font-size: 0.875rem;
+            height: 1.5rem;
+            text-align: right;
+        }
+        
+        .screen {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 300;
+            text-align: right;
+            word-wrap: break-word;
+            min-height: 3rem;
+        }
+        
+        .memory {
+            color: rgba(244, 114, 182, 0.8);
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+            text-align: right;
+        }
+        
+        .buttons {
+            padding: 1rem;
+        }
+        
+        .button-row {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        button.btn {
+            height: 3.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.1s;
+            color: white;
+        }
+        
+        button.btn:active {
+            transform: scale(0.95);
+        }
+        
+        .btn-num {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .btn-num:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-op {
+            background: rgba(147, 51, 234, 0.2);
+            border: 1px solid rgba(147, 51, 234, 0.3);
+            color: #d8b4fe;
+        }
+        
+        .btn-op:hover {
+            background: rgba(147, 51, 234, 0.3);
+        }
+        
+        .btn-func {
+            background: rgba(71, 85, 105, 0.3);
+            border: 1px solid rgba(100, 116, 139, 0.3);
+            color: #cbd5e1;
+        }
+        
+        .btn-func:hover {
+            background: rgba(71, 85, 105, 0.5);
+        }
+        
+        .btn-clear {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+        
+        .btn-clear:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+        
+        .btn-mem {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #93c5fd;
+        }
+        
+        .btn-mem:hover {
+            background: rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-mode {
+            background: rgba(234, 179, 8, 0.2);
+            border: 1px solid rgba(234, 179, 8, 0.3);
+            color: #fde047;
+        }
+        
+        .btn-mode:hover {
+            background: rgba(234, 179, 8, 0.3);
+        }
+        
+        .btn-equal {
+            background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%);
+            box-shadow: 0 4px 12px rgba(147, 51, 234, 0.5);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .graph-container {
+            padding: 1rem;
+        }
+        
+        .input-group {
+            margin-bottom: 1rem;
+        }
+        
+        .input-label {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        
+        .input-field {
+            width: 100%;
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: white;
+            font-size: 1rem;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: #9333ea;
+        }
+        
+        .graph-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        
+        .input-small {
+            font-size: 0.875rem;
+            padding: 0.5rem 0.75rem;
+        }
+        
+        .label-small {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.75rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        canvas {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .graph-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        
+        .control-btn {
+            padding: 0.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .history-container {
+            padding: 1rem;
+        }
+        
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .history-title {
+            color: white;
+            font-weight: 600;
+        }
+        
+        .clear-btn {
+            background: none;
+            border: none;
+            color: rgba(248, 113, 113, 0.8);
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+        
+        .clear-btn:hover {
+            color: #f87171;
+        }
+        
+        .history-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .history-item {
+            background: rgba(30, 41, 59, 0.3);
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .history-item:hover {
+            background: rgba(30, 41, 59, 0.5);
+        }
+        
+        .history-eq {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.875rem;
+        }
+        
+        .history-result {
+            color: white;
+            font-weight: 600;
+            font-size: 1.125rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: rgba(255, 255, 255, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="calculator">
+            <div class="header">
+                <div class="header-top">
+                    <div class="title">🧮 Advanced Calc Pro</div>
+                    <div class="mode" id="modeDisplay">DEG</div>
+                </div>
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('calc')">Calculator</button>
+                    <button class="tab" onclick="switchTab('graph')">Graph</button>
+                    <button class="tab" onclick="switchTab('history')">History</button>
+                </div>
+            </div>
+
+            <div id="calcTab" class="tab-content active">
+                <div class="display">
+                    <div class="equation" id="equation"></div>
+                    <div class="screen" id="display">0</div>
+                    <div class="memory" id="memoryDisplay"></div>
+                </div>
+
+                <div class="buttons" id="buttonContainer"></div>
+            </div>
+
+            <div id="graphTab" class="tab-content">
+                <div class="graph-container">
+                    <div class="input-group">
+                        <label class="input-label">Function: f(x) =</label>
+                        <input type="text" id="graphFunction" class="input-field" value="sin(x)" placeholder="e.g., sin(x), x^2, ln(x)">
+                    </div>
+
+                    <div class="graph-grid">
+                        <div>
+                            <label class="label-small">X Min</label>
+                            <input type="number" id="xMin" class="input-field input-small" value="-10">
+                        </div>
+                        <div>
+                            <label class="label-small">X Max</label>
+                            <input type="number" id="xMax" class="input-field input-small" value="10">
+                        </div>
+                        <div>
+                            <label class="label-small">Y Min</label>
+                            <input type="number" id="yMin" class="input-field input-small" value="-10">
+                        </div>
+                        <div>
+                            <label class="label-small">Y Max</label>
+                            <input type="number" id="yMax" class="input-field input-small" value="10">
+                        </div>
+                    </div>
+
+                    <canvas id="graphCanvas" width="600" height="400"></canvas>
+
+                    <div class="graph-controls">
+                        <button class="control-btn" style="background: rgba(147, 51, 234, 0.2); color: #d8b4fe;" onclick="resetView()">Reset View</button>
+                        <button class="control-btn" style="background: rgba(59, 130, 246, 0.2); color: #93c5fd;" onclick="zoomOut()">Zoom Out</button>
+                        <button class="control-btn" style="background: rgba(34, 197, 94, 0.2); color: #86efac;" onclick="zoomIn()">Zoom In</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="historyTab" class="tab-content">
+                <div class="history-container">
+                    <div class="history-header">
+                        <div class="history-title">Calculation History</div>
+                        <button class="clear-btn" onclick="clearHistory()">Clear All</button>
+                    </div>
+                    <div class="history-list" id="historyList">
+                        <div class="empty-state">No calculations yet</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let display = '0';
+        let equation = '';
+        let history = [];
+        let mode = 'deg';
+        let memory = 0;
+
+        const buttons = [
+            ['sin', 'cos', 'tan', 'ln', '7', '8', '9', '÷'],
+            ['asin', 'acos', 'atan', 'log', '4', '5', '6', '×'],
+            ['√', 'x²', 'xʸ', 'eˣ', '1', '2', '3', '−'],
+            ['π', 'e', '(', ')', '0', '.', '=', '+'],
+            ['C', '⌫', 'deg', 'n!', 'MC', 'MR', 'M+', 'M-']
+        ];
+
+        function initButtons() {
+            const container = document.getElementById('buttonContainer');
+            buttons.forEach(row => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'button-row';
+                row.forEach(btn => {
+                    const button = document.createElement('button');
+                    button.className = 'btn ' + getButtonClass(btn);
+                    button.textContent = btn;
+                    button.onclick = () => handleButton(btn);
+                    rowDiv.appendChild(button);
+                });
+                container.appendChild(rowDiv);
+            });
+        }
+
+        function getButtonClass(btn) {
+            if (btn === '=') return 'btn-equal';
+            if (['C', '⌫'].includes(btn)) return 'btn-clear';
+            if (['÷', '×', '−', '+'].includes(btn)) return 'btn-op';
+            if (['MC', 'MR', 'M+', 'M-'].includes(btn)) return 'btn-mem';
+            if (btn === 'deg') return 'btn-mode';
+            if ('0123456789.'.includes(btn)) return 'btn-num';
+            return 'btn-func';
+        }
+
+        function evaluateExpression(expr) {
+            try {
+                let processed = expr
+                    .replace(/\^/g, '**')
+                    .replace(/×/g, '*')
+                    .replace(/÷/g, '/')
+                    .replace(/−/g, '-')
+                    .replace(/π/g, Math.PI.toString())
+                    .replace(/e(?![x])/g, Math.E.toString());
+
+                processed = processed.replace(/sin\(([^)]+)\)/g, (_, arg) => {
+                    const val = eval(arg);
+                    return mode === 'deg' ? Math.sin(val * Math.PI / 180) : Math.sin(val);
+                });
+                processed = processed.replace(/cos\(([^)]+)\)/g, (_, arg) => {
+                    const val = eval(arg);
+                    return mode === 'deg' ? Math.cos(val * Math.PI / 180) : Math.cos(val);
+                });
+                processed = processed.replace(/tan\(([^)]+)\)/g, (_, arg) => {
+                    const val = eval(arg);
+                    return mode === 'deg' ? Math.tan(val * Math.PI / 180) : Math.tan(val);
+                });
+                processed = processed.replace(/ln\(([^)]+)\)/g, (_, arg) => Math.log(eval(arg)));
+                processed = processed.replace(/log\(([^)]+)\)/g, (_, arg) => Math.log10(eval(arg)));
+                processed = processed.replace(/√\(([^)]+)\)/g, (_, arg) => Math.sqrt(eval(arg)));
+
+                const result = eval(processed);
+                return isFinite(result) ? result : 'Error';
+            } catch {
+                return 'Error';
+            }
+        }
+
+        function factorial(n) {
+            if (n < 0 || !Number.isInteger(n)) return NaN;
+            if (n === 0 || n === 1) return 1;
+            let result = 1;
+            for (let i = 2; i <= n; i++) result *= i;
+            return result;
+        }
+
+        function handleButton(btn) {
+            if (btn === 'C') {
+                display = '0';
+                equation = '';
+            } else if (btn === '⌫') {
+                display = display.length > 1 ? display.slice(0, -1) : '0';
+            } else if (btn === '=') {
+                const result = evaluateExpression(display);
+                if (result !== 'Error') {
+                    history.push({ eq: display, result });
+                    equation = display + ' =';
+                    display = result.toString();
+                    updateHistory();
+                } else {
+                    display = 'Error';
+                }
+            } else if (btn === 'deg') {
+                mode = mode === 'deg' ? 'rad' : 'deg';
+                document.getElementById('modeDisplay').textContent = mode.toUpperCase();
+            } else if (btn === 'π') {
+                display = display === '0' ? 'π' : display + 'π';
+            } else if (btn === 'e') {
+                display = display === '0' ? 'e' : display + 'e';
+            } else if (btn === 'x²') {
+                const val = parseFloat(display);
+                if (!isNaN(val)) display = (val ** 2).toString();
+            } else if (btn === '√') {
+                display = display === '0' ? '√(' : display + '√(';
+            } else if (btn === 'n!') {
+                const val = parseInt(display);
+                if (!isNaN(val)) display = factorial(val).toString();
+            } else if (['sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'ln', 'log'].includes(btn)) {
+                display = display === '0' ? btn + '(' : display + btn + '(';
+            } else if (btn === 'eˣ') {
+                const val = parseFloat(display);
+                if (!isNaN(val)) display = Math.exp(val).toString();
+            } else if (btn === 'xʸ') {
+                display = display + '^';
+            } else if (btn === 'MC') {
+                memory = 0;
+            } else if (btn === 'MR') {
+                display = memory.toString();
+            } else if (btn === 'M+') {
+                const val = parseFloat(display);
+                if (!isNaN(val)) memory += val;
+            } else if (btn === 'M-') {
+                const val = parseFloat(display);
+                if (!isNaN(val)) memory -= val;
+            } else if (['+', '−', '×', '÷'].includes(btn)) {
+                display = display + btn;
+            } else if (btn === '(' || btn === ')') {
+                display = display === '0' ? btn : display + btn;
+            } else {
+                display = display === '0' ? btn : display + btn;
+            }
+
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            document.getElementById('display').textContent = display;
+            document.getElementById('equation').textContent = equation;
+            document.getElementById('memoryDisplay').textContent = memory !== 0 ? `Memory: ${memory}` : '';
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Tab').classList.add('active');
+
+            if (tab === 'graph') drawGraph();
+        }
+
+        function drawGraph() {
+            const canvas = document.getElementById('graphCanvas');
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+
+            const xMin = parseFloat(document.getElementById('xMin').value);
+            const xMax = parseFloat(document.getElementById('xMax').value);
+            const yMin = parseFloat(document.getElementById('yMin').value);
+            const yMax = parseFloat(document.getElementById('yMax').value);
+            const func = document.getElementById('graphFunction').value;
+
+            ctx.clearRect(0, 0, width, height);
+
+            // Grid
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 10; i++) {
+                const x = (i / 10) * width;
+                const y = (i / 10) * height;
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+
+            // Axes
+            const xAxisY = height * (yMax / (yMax - yMin));
+            const yAxisX = width * (-xMin / (xMax - xMin));
+
+            ctx.strokeStyle = '#64748b';
+            ctx.lineWidth = 2;
+            if (xAxisY >= 0 && xAxisY <= height) {
+                ctx.beginPath();
+                ctx.moveTo(0, xAxisY);
+                ctx.lineTo(width, xAxisY);
+                ctx.stroke();
+            }
+            if (yAxisX >= 0 && yAxisX <= width) {
+                ctx.beginPath();
+                ctx.moveTo(yAxisX, 0);
+                ctx.lineTo(yAxisX, height);
+                ctx.stroke();
+            }
+
+            // Function
+            ctx.strokeStyle = '#a855f7';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+
+            let started = false;
+            for (let i = 0; i <= 500; i++) {
+                const x = xMin + (xMax - xMin) * (i / 500);
+                const expr = func.replace(/x/g, `(${x})`);
+                const y = evaluateExpression(expr);
+
+                if (!isNaN(y) && isFinite(y)) {
+                    const canvasX = ((x - xMin) / (xMax - xMin)) * width;
+                    const canvasY = height - ((y - yMin) / (yMax - yMin)) * height;
+
+                    if (canvasY >= 0 && canvasY <= height) {
+                        if (!started) {
+                            ctx.moveTo(canvasX, canvasY);
+                            started = true;
+                        } else {
+                            ctx.lineTo(canvasX, canvasY);
+                        }
+                    } else {
+                        started = false;
+                    }
+                } else {
+                    started = false;
+                }
+            }
+            ctx.stroke();
+        }
+
+        function resetView() {
+            document.getElementById('xMin').value = -10;
+            document.getElementById('xMax').value = 10;
+            document.getElementById('yMin').value = -10;
+            document.getElementById('yMax').value = 10;
+            drawGraph();
+        }
+
+        function zoomOut() {
+            document.getElementById('xMin').value *= 2;
+            document.getElementById('xMax').value *= 2;
+            document.getElementById('yMin').value *= 2;
+            document.getElementById('yMax').value *= 2;
+            drawGraph();
+        }
+
+        function zoomIn() {
+            document.getElementById('xMin').value /= 2;
+            document.getElementById('xMax').value /= 2;
+            document.getElementById('yMin').value /= 2;
+            document.getElementById('yMax').value /= 2;
+            drawGraph();
+        }
+
+        function updateHistory() {
+            const list = document.getElementById('historyList');
+            if (history.length === 0) {
+                list.innerHTML = '<div class="empty-state">No calculations yet</div>';
+            } else {
+                list.innerHTML = history.slice().reverse().map(item => `
+                    <div class="history-item" onclick="useResult('${item.result}')">
+                        <div class="history-eq">${item.eq}</div>
+                        <div class="history-result">= ${item.result}</div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function useResult(result) {
+            display = result;
+            updateDisplay();
+            switchTab('calc');
+        }
+
+        function clearHistory() {
+            history = [];
+            updateHistory();
+        }
+
+        document.getElementById('graphFunction').addEventListener('input', drawGraph);
+        document.getElementById('xMin').addEventListener('input', drawGraph);
+        document.getElementById('xMax').addEventListener('input', drawGraph);
+        document.getElementById('yMin').addEventListener('input', drawGraph);
+        document.getElementById('yMax').addEventListener('input', drawGraph);
+
+        initButtons();
+    </script>
+</body>
+  </html>
